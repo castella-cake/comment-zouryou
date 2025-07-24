@@ -1223,12 +1223,13 @@ fetch(index_html)
     setting_html = html;
   });
 
-const elementId = "pmwp-cyaki-zouryou";
+const mintWatchElementId = "pmwp-cyaki-zouryou-integration";
 
 const prepareForMintWatch = () => {
   clearInterval(start);
+  if (document.getElementById(mintWatchElementId)) return;
   const itemElem = document.createElement("div");
-  itemElem.id = elementId;
+  itemElem.id = mintWatchElementId;
   itemElem.className = "plugin-list-item";
   itemElem.innerHTML = `
   <div class="plugin-list-item-title">
@@ -1244,7 +1245,9 @@ const prepareForMintWatch = () => {
   PREPARE()
   console.log("PMW Plugin: コメント増量");
 }
+// MintWatch プレイヤーの起動まで待機
 document.addEventListener("pmw_playerReady", prepareForMintWatch);
+
 const start = setInterval(() => {
   if (document.getElementsByClassName("d_flex gap_base")[5] != undefined) {
     PREPARE();
