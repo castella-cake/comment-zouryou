@@ -22,6 +22,8 @@ let CommentRenderer,
 let COMMENT = [];
 let CommentLimit = 40;
 
+let isMintWatch = false;
+
 async function LOADCOMMENT(mode) {
   const commentRenderers = document.getElementsByClassName("CommentRenderer");
   if (commentRenderers.length === 0) {
@@ -477,7 +479,7 @@ function PLAYCOMMENT() {
     link.style.visibility = "visible";
     link.href = URL.createObjectURL(blob);
 
-    videoElement = document.querySelector('[data-name="video-content"]');
+    videoElement = document.querySelector(isMintWatch ? "#pmw-element-video" : '[data-name="video-content"]');
     aspect = Number(videoElement.videoWidth) / Number(videoElement.videoHeight);
     console.log(aspect);
 
@@ -501,7 +503,7 @@ function PLAYCOMMENT() {
     draw();
 
     console.log(videoElement);
-    document.querySelector('[data-name="comment"]').style.display = "none";
+    document.querySelector(isMintWatch ? '#pmw-element-commentcanvas' : '[data-name="comment"]').style.display = "none";
     //document.getElementsByClassName("CommentRenderer")[0].style.display =
     //  "none";
     //
@@ -540,10 +542,15 @@ function PLAYCOMMENT() {
       "[aria-label='コメントを表示する']"
     );
   }
+  if (isMintWatch) {
+    Comment_Show_Button = document.querySelector(
+      ".playercontroller-commenttoggle"
+    );
+  }
   let Comment_SH = new MutationObserver(function () {
     console.log(Comment_Show_Button.getAttribute("data-state"));
     CustomVideoContainer.style.zIndex =
-      Comment_Show_Button.getAttribute("aria-label") == "コメントを表示する"
+      (Comment_Show_Button.getAttribute("aria-label") == "コメントを表示する" || (isMintWatch && Comment_Show_Button.getAttribute("aria-label") === "コメントを表示"))
         ? 0
         : 1;
   });
@@ -753,7 +760,7 @@ const COMMENT_CONTROL = (comments) => {
 
 function PREPARE(observe) {
   document
-    .getElementsByClassName("grid-area_[sidebar]")[0]
+    .getElementsByClassName(isMintWatch ? "watch-container-rightaction" : "grid-area_[sidebar]")[0]
     .insertAdjacentHTML("afterbegin", setting_html);
   let customStyle = document.createElement("style");
   customStyle.innerHTML =
@@ -763,7 +770,7 @@ function PREPARE(observe) {
   VideoSymbolContainer = document.getElementsByClassName(
     "VideoSymbolContainer"
   )[0];
-  PlayerContainer = document.querySelector('[data-name="content"]');
+  PlayerContainer = document.querySelector(isMintWatch ? ".player-video-container-inner" : '[data-name="content"]');
   //DefaultVideoContainer = document.getElementsByClassName(
   //  "InView VideoContainer"
   //)[0];
@@ -780,13 +787,13 @@ function PREPARE(observe) {
   document.getElementById("loading_image").src = load_image;
 
   document
-    .querySelector('[data-name="video-content"]')
+    .querySelector(isMintWatch ? ".player-video-container-inner" : '[data-name="video-content"]')
     .after(CustomVideoContainer);
   zouryouCanvasElement = document.getElementById("zouryou_comment");
   SuperDanmakuCanvasElement = document.getElementById(
     "SuperDanmakuCanvasElement"
   );
-  videoElement = document.querySelector('[data-name="video-content"]');
+  videoElement = document.querySelector(isMintWatch ? "#pmw-element-video" : '[data-name="video-content"]');
   //let seekBar = document.getElementsByClassName("SeekBar")[0];
   //if (seekBar.classList.contains("is-disabled")) {
   //  seekBar.classList.remove("is-disabled");
@@ -1155,7 +1162,7 @@ function PREPARE(observe) {
         ? "visible"
         : "hidden";
   });
-  fullScreen.observe(fullScreenButton, { childList: true, subtree: true });
+  if (fullScreenButton) fullScreen.observe(fullScreenButton, { childList: true, subtree: true });
 
   setTimeout(function () {
     function ShowButton() {
@@ -1165,6 +1172,23 @@ function PREPARE(observe) {
       if (settingButton != undefined) {
         document.querySelector("[aria-label='設定']").insertAdjacentHTML(
           "beforebegin",
+          `
+          <button aria-label="コメント増量" style="width:26px;color:white" data-scope="tooltip" data-part="trigger" id="AllCommentViewButton" dir="ltr" data-state="closed" class="cursor_pointer" type="button" tabindex="0" title="コメント増量">
+          ALL
+          </button> 
+        `
+        );
+        document.getElementById("AllCommentViewButton").addEventListener(
+          "click",
+          () => {
+            setting.style.display = "block";
+          },
+          false
+        );
+      } else if (isMintWatch) {
+        const actionsContainer = document.getElementById("pmw-videoactions");
+        actionsContainer.insertAdjacentHTML(
+          "beforeend",
           `
           <button aria-label="コメント増量" style="width:26px;color:white" data-scope="tooltip" data-part="trigger" id="AllCommentViewButton" dir="ltr" data-state="closed" class="cursor_pointer" type="button" tabindex="0" title="コメント増量">
           ALL
@@ -1195,10 +1219,35 @@ fetch(index_html)
   .then((html) => {
     setting_html = html;
   });
+
+const elementId = "pmwp-cyaki-zouryou";
+
+const prepareForMintWatch = () => {
+  clearInterval(start);
+  const itemElem = document.createElement("div");
+  itemElem.id = elementId;
+  itemElem.className = "plugin-list-item";
+  itemElem.innerHTML = `
+  <div class="plugin-list-item-title">
+    コメント増量
+  </div>
+  <div class="plugin-list-item-desc">
+    ニコニコ動画のコメントの表示量を増やす in MintWatch / Original code by tanbatu / MintWatch integration by CYakigasi
+  </div>
+  `;
+  const pluginListElement = document.getElementById("pmw-plugin-list");
+  pluginListElement.appendChild(itemElem);
+  isMintWatch = true;
+  PREPARE()
+  console.log("PMW Plugin: コメント増量");
+}
+document.addEventListener("pmw_playerReady", prepareForMintWatch);
 const start = setInterval(() => {
   if (document.getElementsByClassName("d_flex gap_base")[5] != undefined) {
     PREPARE();
     clearInterval(start);
+    document.removeEventListener("pmw_playerReady", prepareForMintWatch);
   }
 }, 50);
+
 console.log("✨コメント増量 v7.4\nCopyright (c) 2022 tanbatu.");
