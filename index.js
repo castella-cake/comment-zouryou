@@ -771,6 +771,9 @@ function PREPARE(observe) {
     "VideoSymbolContainer"
   )[0];
   PlayerContainer = document.querySelector(isMintWatch ? ".player-video-container-inner" : '[data-name="content"]');
+  if (isMintWatch && document.querySelector(".player-video-container")) {
+    document.querySelector(".player-video-container").style = "position: relative;";
+  }
   //DefaultVideoContainer = document.getElementsByClassName(
   //  "InView VideoContainer"
   //)[0];
